@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { startOfHour, parseISO, isBefore, format } from 'date-fns';
+import { startOfHour, parseISO, isBefore, format, subHours } from 'date-fns';
 import pt from 'date-fns/locale/pt';
 
 import User from '../models/user';
@@ -7,6 +7,8 @@ import File from '../models/file';
 
 import Appointment from '../models/appointment';
 import Notification from '../schemas/notification';
+
+import Mail from '../../lib/mail';
 
 class AppointmentController {
   async store(req, res) {
@@ -97,6 +99,50 @@ class AppointmentController {
     });
 
     return res.json(appointments);
+  }
+
+  async delete(req, res) {
+    const appointment = await Appointment.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: 'provider',
+          attributes: ['name', 'email'],
+        },
+      ],
+    });
+    const user = await User.findByPk(appointment.user_id);
+
+    if (appointment.user_id !== req.userId) {
+      return res
+        .status(401)
+        .json({ error: 'you can only delete appointments thath you create' });
+    }
+
+    const limitHour = subHours(appointment.date, 2);
+
+    if (isBefore(limitHour, new Date())) {
+      return res
+        .status(401)
+        .json({ error: 'you can only dismiss appointmenrs 2 hours before' });
+    }
+
+    appointment.canceled_at = new Date();
+    await appointment.save();
+
+    Mail.sendmail({
+      to: `${appointment.provider.name} <${appointment.provider.email}>`,
+      subject: 'Agendamento cancelado',
+      template: 'cancelation',
+      context: {
+        provider: appointment.provider.name,
+        user: user.name,
+        date: format(appointment.date, "'dia' dd 'de' MMMM', às' H:mm", {
+          locale: pt,
+        }),
+      },
+    });
+    return res.json(appointment);
   }
 }
 
