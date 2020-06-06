@@ -1,7 +1,7 @@
 import { endOfDay, startOfDay, parseISO } from 'date-fns';
 import { Op } from 'sequelize';
 import Appointment from '../models/appointment';
-0
+
 class ScheduleController {
   async index(req, res) {
     const { date } = req.query;
