@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import Proptypes from 'prop-types';
 import api from '../../Services/api';
 import { Link } from 'react-router-dom'
+import { FaArrowLeft, FaArrowRight } from 'react-icons/fa'
 
 import { Loading, Owner, IssueList } from './styles';
 import Container from '../../components/container';
@@ -19,6 +20,8 @@ export default class Repository extends Component {
     repositorys: {},
     issues: [],
     loading: true,
+    status:'open',
+    page: 1,
   };
 
   async componentDidMount() {
@@ -43,6 +46,65 @@ export default class Repository extends Component {
       loading: false,
     })
   }
+  handleFilter = async e => {
+    const repoName = decodeURIComponent(this.props.match.params.repository);
+    const issues = await api.get(`/repos/${repoName}/issues`, {
+      params:{
+        state: e.target.value,
+        per_page: 5,
+        page: 1,
+      },
+    });
+
+    this.setState({
+      issues: issues.data,
+      loading: false,
+      status: e.target.value,
+      page: 1,
+    })
+  };
+
+  handlePreviousPage = async e => {
+    // const page = this.state.page - 1;
+    if(this.state.page !== 1){
+      await this.setState(prevstate => ({ page: prevstate.page - 1}));
+
+      const repoName = decodeURIComponent(this.props.match.params.repository);
+      const issues = await api.get(`/repos/${repoName}/issues`, {
+        params:{
+          state: this.state.status,
+          per_page: 5,
+          page:this.state.page,
+        },
+      });
+
+
+      this.setState({
+        issues: issues.data,
+      });
+    }
+  };
+
+  handleNextPage = async e => {
+    // const page = this.state.page + 1;
+    await this.setState(prevstate => ({ page: prevstate.page + 1}));
+
+    const repoName = decodeURIComponent(this.props.match.params.repository);
+    const issues = await api.get(`/repos/${repoName}/issues`, {
+      params:{
+        state: this.state.status,
+        per_page: 5,
+        page:this.state.page,
+      },
+    });
+
+
+    this.setState({
+      issues: issues.data,
+    });
+  };
+
+
 
   render() {
     const {repository, issues, loading} = this.state;
@@ -53,6 +115,13 @@ export default class Repository extends Component {
     return <Container>
       <Owner>
         <Link to= "/">Voltar aos repositórios</Link>
+        <label for="issueStatus">Issue status:</label>
+          <select name="IssueStatus" id="IssueStatus" onChange={this.handleFilter}>
+            <option value="open">open</option>
+            <option value="all">all</option>
+            <option value="closed">Closed</option>
+          </select>
+
         <img src={repository.owner.avatar_url} alt={repository.owner.login}/>
         <h1>{repository.name}</h1>
         <p>{repository.description}</p>
@@ -72,6 +141,14 @@ export default class Repository extends Component {
             </div>
           </li>
         ))}
+
+        <button onClick = {this.handlePreviousPage}>
+          {(this.state.page===1) ? <FaArrowLeft color= "#ccc" size= {14} disabled/>: <FaArrowLeft color= "#7159c1" size= {14} /> }
+        </button>
+        <button onClick = {this.handleNextPage}>
+          <FaArrowRight color= "#7159c1" size= {14}/>
+        </button>
+        {this.state.page}
       </IssueList>
     </Container>;
   }

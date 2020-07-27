@@ -102,4 +102,8 @@ export const IssueList = styled.ul`
       }
     }
   }
+  div {
+
+  }
 `
+

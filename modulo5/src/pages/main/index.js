@@ -12,6 +12,7 @@ import { Form, SubmitButton, List } from './styles';
       newRepo: '',
       repositories: [],
       loading: false,
+      error: false,
     };
 
     componentDidMount(){
@@ -34,32 +35,50 @@ import { Form, SubmitButton, List } from './styles';
     };
 
     handleSubmit = async e => {
-      e.preventDefault();
-      this.setState({ loading: true });
-      const { newRepo, repositories } = this.state;
+      try {
+        e.preventDefault();
+        this.setState({ loading: true });
+        const { newRepo, repositories } = this.state;
 
-      const response = await api.get(`/repos/${newRepo}`);
+        const response = await api.get(`/repos/${newRepo}`);
 
-      const data = {
-        name: response.data.full_name,
+        const data = {
+          name: response.data.full_name,
+        };
+        for(let repo of repositories) {
+          if(repo.name.toLowerCase() === newRepo.toLocaleLowerCase()){
+            throw new Error('Error: duplicated repository');
+          }
+        }
+
+        this.setState({
+          repositories : [...repositories,data],
+          newRepo: '',
+          loading: false,
+          error: false,
+        })
+
+      } catch(err){
+        this.setState({
+          loading:false,
+          error:true,
+        })
       };
 
-      this.setState({
-        repositories : [...repositories,data],
-        newRepo: '',
-        loading: false,
-      })
 
-    };
+    }
+
+
     render() {
-      const { newRepo, loading, repositories } = this.state;
+      const { newRepo, loading, repositories, error } = this.state;
       return (
         <Container>
           <h1>
           <FaGithubAlt/>
             Repositórios
           </h1>
-          <Form onSubmit={this.handleSubmit}>
+
+          <Form onSubmit={this.handleSubmit} error = {error}>
             <input
               type = "text"
               placeholder = "adicionar repositório"
@@ -84,6 +103,6 @@ import { Form, SubmitButton, List } from './styles';
         </Container>
       )
     }
-}
+  }
 
 export default Main;
