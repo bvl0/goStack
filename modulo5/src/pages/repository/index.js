@@ -4,7 +4,7 @@ import api from '../../Services/api';
 import { Link } from 'react-router-dom'
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa'
 
-import { Loading, Owner, IssueList } from './styles';
+import { Loading, Owner, IssueList, PageActions, IssueFilter } from './styles';
 import Container from '../../components/container';
 
 export default class Repository extends Component {
@@ -115,18 +115,22 @@ export default class Repository extends Component {
     return <Container>
       <Owner>
         <Link to= "/">Voltar aos repositórios</Link>
-        <label for="issueStatus">Issue status:</label>
-          <select name="IssueStatus" id="IssueStatus" onChange={this.handleFilter}>
-            <option value="open">open</option>
-            <option value="all">all</option>
-            <option value="closed">Closed</option>
-          </select>
 
         <img src={repository.owner.avatar_url} alt={repository.owner.login}/>
         <h1>{repository.name}</h1>
         <p>{repository.description}</p>
       </Owner>
       <IssueList>
+      <IssueFilter>
+          <label for="issueStatus">Issue status:</label>
+            <select name="IssueStatus" id="IssueStatus" onChange={this.handleFilter}>
+              <option value="open">open</option>
+              <option value="all">all</option>
+              <option value="closed">Closed</option>
+            </select>
+
+        </IssueFilter>
+
         {issues.map(issue => (
           <li key ={String(issue.id)}>
             <img src={issue.user.avatar_url} alt={issue.user.login}/>
@@ -141,14 +145,15 @@ export default class Repository extends Component {
             </div>
           </li>
         ))}
-
-        <button onClick = {this.handlePreviousPage}>
-          {(this.state.page===1) ? <FaArrowLeft color= "#ccc" size= {14} disabled/>: <FaArrowLeft color= "#7159c1" size= {14} /> }
-        </button>
-        <button onClick = {this.handleNextPage}>
-          <FaArrowRight color= "#7159c1" size= {14}/>
-        </button>
-        {this.state.page}
+        <PageActions>
+          <button onClick = {this.handlePreviousPage}>
+            {(this.state.page===1) ? <FaArrowLeft color= "#ccc" size= {14} disabled/>: <FaArrowLeft color= "#7159c1" size= {14} /> }
+          </button>
+          {this.state.page}
+          <button onClick = {this.handleNextPage}>
+            <FaArrowRight color= "#7159c1" size= {14}/>
+          </button>
+        </PageActions>
       </IssueList>
     </Container>;
   }
