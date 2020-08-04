@@ -4,5 +4,7 @@
   "main": "index.js",
   "author": "icaro156 <icaro1561@outlook.com>",
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {
+    "react-native-cli": "^2.0.1"
+  }
 }
