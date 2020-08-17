@@ -1,6 +1,8 @@
 import 'react-native-gesture-handler';
 import React, {Component} from 'react';
-import {Keyboard} from 'react-native';
+import PropTypes from 'prop-types';
+import AsyncStorage from '@react-native-community/async-storage';
+import {Keyboard, ActivityIndicator} from 'react-native';
 import api from '../../services/api';
 
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -19,13 +21,42 @@ import {
 } from './styles';
 
 class Main extends Component {
+  static navigationOptions = {
+    title: 'Usuários'
+  };
+
+  static propTypes = {
+    navigation: PropTypes.shape({
+      navigate: PropTypes.func,
+    }).isRequired,
+  }
+
   state = {
     newUser: '',
     users: [],
+    loading: false,
   }
+
+  async componentDidMount() {
+    const users = await AsyncStorage.getItem('users');
+
+    if (users) {
+      this.setState({ users: JSON.parse(users) });
+    }
+  };
+
+  async componentDidUpdate(_, prevState) {
+    const { users } = this.state;
+
+    if (prevState.users !== users ) {
+      AsyncStorage.setItem('users', JSON.stringify(users));
+    }
+  };
 
   handleAddUser = async () => {
     const { users, newUser} = this.state;
+
+    this.setState({loading: true});
 
     const response = await api.get(`/users/${newUser}`);
 
@@ -39,14 +70,21 @@ class Main extends Component {
     this.setState({
       users: [...users, data],
       newUser: '',
+      loading: false,
     });
 
     Keyboard.dismiss();
 
   }
 
+  handleNavigate = (user) => {
+    const { navigation } = this.props;
+
+    navigation.navigate('User', { user });
+  }
+
   render() {
-    const { users, newUser } = this.state;
+    const { users, newUser, loading } = this.state;
 
     return (
       <Container>
@@ -61,8 +99,8 @@ class Main extends Component {
             onSubmitEditing = {this.handleAddUser}
           />
 
-          <SubmitButton onPress = {this.handleAddUser} >
-            <Icon name= "add" size={20} color="#fff" />
+          <SubmitButton loading={loading}onPress = {this.handleAddUser} >
+            {loading ? (<ActivityIndicator color= "#fff"/>) : (<Icon name= "add" size={20} color="#fff" />)}
           </SubmitButton>
         </Form>
         <List
@@ -74,7 +112,7 @@ class Main extends Component {
               <Name> {item.name} </Name>
               <Bio> {item.bio} </Bio>
 
-              <ProfileButton onPress ={() => {}} >
+              <ProfileButton onPress ={() => this.handleNavigate(item)} >
                 <ProfileButtonText> Ver perfil </ProfileButtonText>
               </ProfileButton>
             </User>
